@@ -3,4 +3,5 @@ project(cut C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(cut main.c)
+add_executable(cut tests.c threads.c threads.h ring_buffer.c ring_buffer.h)
+target_link_libraries( cut pthread )
