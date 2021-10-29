@@ -15,7 +15,7 @@ RingBuffer *buffer_init(void){
 }
 
 bool buffer_is_empty(RingBuffer *ringBuffer){
-    return ringBuffer->count == 0;
+    return ringBuffer->count == 0 && !ringBuffer->head && !ringBuffer->tail;
 }
 
 bool buffer_is_full(RingBuffer *ringBuffer){
@@ -44,4 +44,26 @@ Stats *buffer_get(RingBuffer *ringBuffer){
     return NULL;
 }
 
+void buffer_remove(RingBuffer *ringBuffer){
+    if (!buffer_is_empty(ringBuffer)){
+        if (ringBuffer->tail == ringBuffer->head){
+            free(ringBuffer->head);
+            ringBuffer->head = NULL;
+            ringBuffer->tail = NULL;
+        }else {
+            Stats *next_stat = ringBuffer->head->next;
+            Stats *current_head = ringBuffer->head;
+            ringBuffer->head = next_stat;
+            free(current_head);
+            current_head = NULL;
+        }
+        ringBuffer->count--;
 
+    }
+}
+
+void buffer_flush(RingBuffer *ringBuffer){
+    while (!buffer_is_empty(ringBuffer)){
+        buffer_remove(ringBuffer);
+    }
+}

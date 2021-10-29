@@ -10,17 +10,22 @@ static RingBuffer *test_ringBuffer;
 void test_buffer_init(void);
 void test_buffer_is_empty(bool expected_result);
 void test_buffer_is_full(bool expected_result);
-void case_1(void);
 Stats *test_buffer_add(void);
-Stats *case_2(void);
 void test_buffer_get(Stats *expected_head);
+
+void case_1(void);
+Stats *case_2(void);
 void case_3(Stats *expected_head);
+void case_4(Stats *previous_head);
+void case_5(void);
 
 int main(){
     test_ringBuffer = buffer_init();
     case_1();
     Stats *test_head = case_2();
     case_3(test_head);
+    case_4(test_head);
+    case_5();
     printf("All tests passed\n");
     return 0;
 }
@@ -47,6 +52,21 @@ void case_3(Stats *expected_head){
     test_buffer_is_empty(false);
     test_buffer_is_full(false);
     test_buffer_get(expected_head);
+}
+
+// check new head after removing
+void case_4(Stats *previous_head){
+    int previous_count = test_ringBuffer->count;
+    buffer_remove(test_ringBuffer);
+    assert(previous_head != test_ringBuffer->head);
+    assert(test_ringBuffer->count == previous_count-1);
+}
+
+// check if the all buffered data is removed
+void case_5(void){
+    test_buffer_add();
+    buffer_flush(test_ringBuffer);
+    test_buffer_is_empty(true);
 }
 
 void test_buffer_init(void){
@@ -84,4 +104,3 @@ Stats *test_buffer_add(void){
 void test_buffer_get(Stats *expected_head){
     assert(expected_head == buffer_get(test_ringBuffer));
 }
-
