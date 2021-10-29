@@ -62,8 +62,10 @@ void buffer_remove(RingBuffer *ringBuffer){
     }
 }
 
-void buffer_flush(RingBuffer *ringBuffer){
-    while (!buffer_is_empty(ringBuffer)){
-        buffer_remove(ringBuffer);
+void buffer_flush(RingBuffer **ringBuffer){
+    while (!buffer_is_empty(*ringBuffer)){
+        buffer_remove(*ringBuffer);
     }
+    free(*ringBuffer);
+    *ringBuffer = NULL;
 }

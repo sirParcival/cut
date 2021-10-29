@@ -31,6 +31,6 @@ bool buffer_is_full(RingBuffer *ringBuffer);
 void buffer_add(RingBuffer *ringBuffer, Stats *stats);
 Stats *buffer_get(RingBuffer *ringBuffer);
 void buffer_remove(RingBuffer *ringBuffer);
-void buffer_flush(RingBuffer *ringBuffer);
+void buffer_flush(RingBuffer **ringBuffer);
 
 #endif //CUT_RING_BUFFER_H

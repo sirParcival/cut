@@ -65,8 +65,8 @@ void case_4(Stats *previous_head){
 // check if the all buffered data is removed
 void case_5(void){
     test_buffer_add();
-    buffer_flush(test_ringBuffer);
-    test_buffer_is_empty(true);
+    buffer_flush(&test_ringBuffer);
+    assert(!test_ringBuffer);
 }
 
 void test_buffer_init(void){
