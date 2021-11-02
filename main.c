@@ -12,7 +12,16 @@ int main() {
     }
     int num_of_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
 
-    if (buffer_init(&raw_data) != 0) printf("buffer with raw data failed to initialize\n");
+//    if (buffer_init(&raw_data) != 0) printf("buffer with raw data failed to initialize\n");
+
+    raw_data = calloc(1, sizeof(Buffer));
+    copy_data = calloc(1, sizeof(Buffer));
+
+
+    sem_init(&fillBuffer, 0, 0);
+    sem_init(&fillCopy, 0, 0);
+    sem_init(&emptyBuffer, 0, BUFFER_SIZE);
+    sem_init(&emptyCopy, 0, BUFFER_SIZE);
 
     pthread_t reader, analyzer, printer;
     pthread_create(&reader, NULL, (void *(*)(void *)) Reader, NULL);
