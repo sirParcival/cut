@@ -18,20 +18,24 @@ pthread_mutex_t mutex;
 sem_t fillBuffer, fillCopy;
 sem_t emptyBuffer, emptyCopy;
 
+
+
+
 typedef struct prev_data {
     unsigned long PrevIdle, PrevNonIdle, PrevTotal;
 }prev_data;
+prev_data *all_data;
 
 
 void *Reader(void *arg);
-void *Analyzer(const int *num_of_cpus);
+void *Analyzer(void *arg);
 void *Printer(void *arg);
 
 void term(int signum);
 
 void read_to_buffer(char *name, regex_t *regex, FILE *file);
 
-void analyze(prev_data *prevData, prev_data *all_data, unsigned long *Idle, unsigned long *NonIdle, unsigned long *Total);
+void analyze(prev_data *prevData, unsigned long *Idle, unsigned long *NonIdle, unsigned long *Total);
 int get_index(Stats *stats);
 int write_previous_data(prev_data *prevData, Stats *stats);
 void calculate_total(unsigned long *Idle, unsigned long *NonIdle, unsigned long*Total, Stats *stats);

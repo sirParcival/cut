@@ -12,11 +12,12 @@ int main() {
     }
     int num_of_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
 
-//    if (buffer_init(&raw_data) != 0) printf("buffer with raw data failed to initialize\n");
 
     raw_data = calloc(1, sizeof(Buffer));
     copy_data = calloc(1, sizeof(Buffer));
-
+    copy_data->max = BUFFER_SIZE;
+    raw_data->max = BUFFER_SIZE;
+    all_data = calloc((unsigned long )(num_of_cpus) + 1, sizeof(prev_data));
 
     sem_init(&fillBuffer, 0, 0);
     sem_init(&fillCopy, 0, 0);
@@ -25,12 +26,20 @@ int main() {
 
     pthread_t reader, analyzer, printer;
     pthread_create(&reader, NULL, (void *(*)(void *)) Reader, NULL);
-    pthread_create(&analyzer, NULL, (void *(*)(void *)) Analyzer, &num_of_cpus);
+    pthread_create(&analyzer, NULL, (void *(*)(void *)) Analyzer, NULL);
     pthread_create(&printer, NULL, (void *(*)(void *)) Printer, NULL);
 //
+
     pthread_join(reader, NULL);
+    printf("reader joined\n");
+//    pthread_cancel(analyzer);
     pthread_join(analyzer, NULL);
+    printf("analyzer joined\n");
+
     pthread_join(printer, NULL);
+    printf("printer joined\n");
+
+
 
     printf("done\n");
     return 0;

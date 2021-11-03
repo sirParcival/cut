@@ -1,11 +1,11 @@
 //
 // Created by redstart on 10/29/21.
 //
-#include "threads.h"
+#include "buffer.h"
 #include <assert.h>
 #include <stdbool.h>
 
-static RingBuffer *test_ringBuffer;
+static Buffer *test_ringBuffer;
 
 void test_buffer_init(void);
 void test_buffer_is_empty(bool expected_result);
@@ -20,7 +20,8 @@ void case_4(Stats *previous_head);
 void case_5(void);
 
 int main(){
-    test_ringBuffer = buffer_init();
+    test_ringBuffer = calloc(1, sizeof(Buffer));
+    test_ringBuffer->max = BUFFER_SIZE;
     case_1();
     Stats *test_head = case_2();
     case_3(test_head);
@@ -57,7 +58,7 @@ void case_3(Stats *expected_head){
 // check new head after removing
 void case_4(Stats *previous_head){
     int previous_count = test_ringBuffer->count;
-    buffer_remove(test_ringBuffer);
+    remove_from_buffer(test_ringBuffer);
     assert(previous_head != test_ringBuffer->head);
     assert(test_ringBuffer->count == previous_count-1);
 }
@@ -84,18 +85,14 @@ void test_buffer_is_full(bool expected_result){
 Stats *test_buffer_add(void){
     Stats *test_stats = calloc(1, sizeof(Stats));
     test_stats->next = NULL;
-    test_stats->user = 3540820;
-    test_stats->nice = 1148;
-    test_stats->system = 1060031;
-    test_stats->idle = 9407974;
-    test_stats->iowait = 50447;
-    test_stats->irq = 0;
-    test_stats->softirq = 57604;
-    test_stats->steal = 0;
-    test_stats->guest = 0;
-    test_stats->guest_nice = 0;
+    test_stats->data[0] = 3540820;
+    test_stats->data[1] = 1148;
+    test_stats->data[2] = 1060031;
+    test_stats->data[3] = 9407974;
+    test_stats->data[4] = 50447;
+    test_stats->data[6] = 57604;
     int prev_count = test_ringBuffer->count;
-    buffer_add(test_ringBuffer, test_stats);
+    put_into_buffer(test_ringBuffer, test_stats);
     assert(test_ringBuffer->tail == test_stats);
     assert(test_ringBuffer->count == prev_count+1);
     return test_stats;

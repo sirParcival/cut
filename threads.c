@@ -11,7 +11,7 @@ void term(int signum)
     done = 1;
     printf("Received SIGTERM, flushing\n");
     buffer_flush(&raw_data);
-
+    buffer_flush(&copy_data);
 }
 
 
@@ -36,12 +36,18 @@ void *Reader(void* arg) {
         read_to_buffer(name, &regex, file);
         pthread_mutex_unlock(&mutex);
         sem_post(&fillBuffer);
-        sleep(1);
+
         free(name);
         name = NULL;
         fclose(file);
+        file = NULL;
+        sleep(1);
     }
-
+    sem_destroy(&emptyBuffer);
+    sem_destroy(&emptyCopy);
+    sem_destroy(&fillCopy);
+    sem_destroy(&fillBuffer);
+    printf("exiting reader\n");
     return NULL;
 }
 
@@ -57,9 +63,7 @@ void read_to_buffer(char *name, regex_t *regex, FILE *file){
             stats->name[i] = *(name+i);
         }
 
-//        pthread_mutex_lock(&mutex);
         put_into_buffer(raw_data, stats);
-//        pthread_mutex_unlock(&mutex);
 
 
         fscanf(file, "%s", name);
@@ -68,23 +72,18 @@ void read_to_buffer(char *name, regex_t *regex, FILE *file){
 
 }
 
-void *Analyzer(const int *num_of_cpus){
+void *Analyzer(void *arg){
     unsigned long Idle, NonIdle, Total;
-    prev_data *all_data = calloc((unsigned long )(*num_of_cpus) + 1, sizeof(prev_data));
     prev_data *prevData = NULL;
-    analyze(prevData, all_data, &Idle, &NonIdle, &Total);
-
+    analyze(prevData, &Idle, &NonIdle, &Total);
     return NULL;
 }
 
-void analyze(prev_data *prevData, prev_data *all_data, unsigned long *Idle, unsigned long *NonIdle, unsigned long *Total){
+void analyze(prev_data *prevData, unsigned long *Idle, unsigned long *NonIdle, unsigned long *Total){
     while (!done){
-        sleep(1);
-//        pthread_mutex_lock(&mutex);
+
         Stats *stats = buffer_get(raw_data);
         if(!stats) continue;
-//        pthread_mutex_unlock(&mutex);
-
 
         prevData = &all_data[get_index(stats)];
         if (!prevData->PrevTotal && !prevData->PrevNonIdle && !prevData->PrevIdle){
@@ -94,8 +93,12 @@ void analyze(prev_data *prevData, prev_data *all_data, unsigned long *Idle, unsi
             pthread_mutex_unlock(&mutex);
             sem_post(&emptyBuffer);
         }else{
+            printf("before empycopy\n");
+
             sem_wait(&emptyCopy);
+            printf("before fillBuffer\n");
             sem_wait(&fillBuffer);
+            printf("before mutex lock\n");
             pthread_mutex_lock(&mutex);
 
             calculate_total(Idle, NonIdle, Total, stats);
@@ -105,12 +108,14 @@ void analyze(prev_data *prevData, prev_data *all_data, unsigned long *Idle, unsi
             stats_copy(to_print, stats);
             calculate_percentage(prevData, Idle, Total, to_print);
             pthread_mutex_unlock(&mutex);
+            printf("after mutex lock\n");
             sem_post(&emptyBuffer);
+            printf("after emptybuffer\n");
             sem_post(&fillCopy);
+            printf("before fillcopy\n");
 
 
         }
-
     }
 }
 
@@ -125,10 +130,7 @@ int get_index(Stats *stats){
 int write_previous_data(prev_data *prevData, Stats *stats){
     if (!prevData->PrevTotal && !prevData->PrevNonIdle && !prevData->PrevIdle){
         calculate_total(&prevData->PrevIdle, &prevData->PrevNonIdle, &prevData->PrevTotal, stats);
-//        pthread_mutex_lock(&mutex);
-
         remove_from_buffer(raw_data);
-//        pthread_mutex_unlock(&mutex);
         return 0;
     }
     return 1;
@@ -136,6 +138,7 @@ int write_previous_data(prev_data *prevData, Stats *stats){
 
 void calculate_total(unsigned long *Idle, unsigned long *NonIdle, unsigned long*Total, Stats *stats){
     *Idle = stats->data[3] + stats->data[4];
+    *NonIdle = 0;
     for (int i = 0; i < 3; ++i) {
         *NonIdle += stats->data[i];
     }
@@ -148,6 +151,7 @@ void calculate_total(unsigned long *Idle, unsigned long *NonIdle, unsigned long*
 void calculate_percentage(prev_data *prevData, const unsigned long *Idle, const unsigned long *Total, Stats *stats){
     unsigned long totald = *Total - prevData->PrevTotal;
     unsigned long idled = *Idle - prevData->PrevIdle;
+
 
     prevData->PrevTotal = *Total;
     prevData->PrevIdle = *Idle;
@@ -165,10 +169,11 @@ void *Printer(void* arg) {
         sleep(1);
         sem_wait(&fillCopy);
         pthread_mutex_lock(&mutex);
-        printf("%s: %f\n", copy_data->head->name, copy_data->head->cpu_percentage);
+        printf("%s: %.2f%%\n", copy_data->head->name, copy_data->head->cpu_percentage);
         remove_from_buffer(copy_data);
         pthread_mutex_unlock(&mutex);
         sem_post(&emptyCopy);
     }
+    printf("exiting printer\n");
     return NULL;
 }
