@@ -10,8 +10,6 @@ void term(int signum)
 {
     done = 1;
     printf("Received SIGTERM, flushing\n");
-    buffer_flush(&raw_data);
-    buffer_flush(&copy_data);
 }
 
 
@@ -43,10 +41,7 @@ void *Reader(void* arg) {
         file = NULL;
         sleep(1);
     }
-    sem_destroy(&emptyBuffer);
-    sem_destroy(&emptyCopy);
-    sem_destroy(&fillCopy);
-    sem_destroy(&fillBuffer);
+    regfree(&regex);
     printf("exiting reader\n");
     return NULL;
 }
@@ -64,8 +59,6 @@ void read_to_buffer(char *name, regex_t *regex, FILE *file){
         }
 
         put_into_buffer(raw_data, stats);
-
-
         fscanf(file, "%s", name);
 
     }
@@ -75,13 +68,14 @@ void read_to_buffer(char *name, regex_t *regex, FILE *file){
 void *Analyzer(void *arg){
     unsigned long Idle, NonIdle, Total;
     prev_data *prevData = NULL;
+    printf("Please wait, reading previous cpu data\n");
     analyze(prevData, &Idle, &NonIdle, &Total);
     return NULL;
 }
 
 void analyze(prev_data *prevData, unsigned long *Idle, unsigned long *NonIdle, unsigned long *Total){
     while (!done){
-
+        sleep(1);
         Stats *stats = buffer_get(raw_data);
         if(!stats) continue;
 
@@ -93,12 +87,9 @@ void analyze(prev_data *prevData, unsigned long *Idle, unsigned long *NonIdle, u
             pthread_mutex_unlock(&mutex);
             sem_post(&emptyBuffer);
         }else{
-            printf("before empycopy\n");
 
             sem_wait(&emptyCopy);
-            printf("before fillBuffer\n");
             sem_wait(&fillBuffer);
-            printf("before mutex lock\n");
             pthread_mutex_lock(&mutex);
 
             calculate_total(Idle, NonIdle, Total, stats);
@@ -108,12 +99,8 @@ void analyze(prev_data *prevData, unsigned long *Idle, unsigned long *NonIdle, u
             stats_copy(to_print, stats);
             calculate_percentage(prevData, Idle, Total, to_print);
             pthread_mutex_unlock(&mutex);
-            printf("after mutex lock\n");
             sem_post(&emptyBuffer);
-            printf("after emptybuffer\n");
             sem_post(&fillCopy);
-            printf("before fillcopy\n");
-
 
         }
     }

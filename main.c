@@ -28,11 +28,9 @@ int main() {
     pthread_create(&reader, NULL, (void *(*)(void *)) Reader, NULL);
     pthread_create(&analyzer, NULL, (void *(*)(void *)) Analyzer, NULL);
     pthread_create(&printer, NULL, (void *(*)(void *)) Printer, NULL);
-//
 
     pthread_join(reader, NULL);
     printf("reader joined\n");
-//    pthread_cancel(analyzer);
     pthread_join(analyzer, NULL);
     printf("analyzer joined\n");
 
@@ -40,7 +38,13 @@ int main() {
     printf("printer joined\n");
 
 
-
+    sem_destroy(&emptyBuffer);
+    sem_destroy(&emptyCopy);
+    sem_destroy(&fillCopy);
+    sem_destroy(&fillBuffer);
+    buffer_flush(&raw_data);
+    buffer_flush(&copy_data);
+    free(all_data);
     printf("done\n");
     return 0;
 }

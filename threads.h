@@ -19,8 +19,6 @@ sem_t fillBuffer, fillCopy;
 sem_t emptyBuffer, emptyCopy;
 
 
-
-
 typedef struct prev_data {
     unsigned long PrevIdle, PrevNonIdle, PrevTotal;
 }prev_data;
